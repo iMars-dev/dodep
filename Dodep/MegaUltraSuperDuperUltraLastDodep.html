@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Однорукий бандит</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #2b2727;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .slot-machine {
+            background: linear-gradient(135deg, #494848, #ad1717);
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        
+        .slots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .slot {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border: 3px solid #333;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .info {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .balance {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2E8B57;
+        }
+        
+        .result {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+            min-height: 25px;
+        }
+        
+        .win {
+            color: #FFD700;
+            text-shadow: 0 0 5px rgba(255,215,0,0.5);
+        }
+        
+        .loss {
+            color: #DC143C;
+        }
+        
+        .spinning {
+            animation: spin 0.1s infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="slot-machine">
+        <h1>🎰 Однорукий бандит 🎰</h1>
+        
+        <div class="info">
+            <div class="balance">Баланс: <span id="balance">100</span> ₽</div>
+            <div class="result" id="result"></div>
+        </div>
+        
+        <div class="slots">
+            <div class="slot" id="slot1">🍒</div>
+            <div class="slot" id="slot2">🍋</div>
+            <div class="slot" id="slot3">🍊</div>
+        </div>
+        
+        <div class="controls">
+            <button id="spinBtn" onclick="spin()">Крутить (10 ₽)</button>
+            <button id="resetBtn" onclick="resetGame()">Новая игра</button>
+        </div>
+        
+        <div class="info">
+            <h3>Правила:</h3>
+            <p>3 одинаковых символа = x5 ставки</p>
+            <p>2 одинаковых символа = x2 ставки</p>
+        </div>
+    </div>
+
+    <script>
+        const symbols = ['🍒', '🍋', '🍊', '🍇', '🔔', '💎'];
+        
+        let balance = 100;
+        let isSpinning = false;
+        
+        const balanceElement = document.getElementById('balance');
+        const resultElement = document.getElementById('result');
+        const spinBtn = document.getElementById('spinBtn');
+        const slot1 = document.getElementById('slot1');
+        const slot2 = document.getElementById('slot2');
+        const slot3 = document.getElementById('slot3');
+        
+        function getRandomSymbol() {
+            return symbols[Math.floor(Math.random() * symbols.length)];
+        }
+        
+        function spin() {
+            if (isSpinning || balance < 10) return;
+
+            balance -= 10;
+            balanceElement.textContent = balance;
+            resultElement.textContent = '';
+            resultElement.className = 'result';
+            
+            isSpinning = true;
+            spinBtn.disabled = true;
+
+            let spins = 0;
+            const maxSpins = 20;
+            
+            const spinInterval = setInterval(() => {
+                slot1.textContent = getRandomSymbol();
+                slot2.textContent = getRandomSymbol();
+                slot3.textContent = getRandomSymbol();
+                
+                spins++;
+                
+                if (spins >= maxSpins) {
+                    clearInterval(spinInterval);
+                    
+                    const finalSymbols = [
+                        getRandomSymbol(),
+                        getRandomSymbol(),
+                        getRandomSymbol()
+                    ];
+                    
+                    slot1.textContent = finalSymbols[0];
+                    slot2.textContent = finalSymbols[1];
+                    slot3.textContent = finalSymbols[2];
+                    
+                    checkWin(finalSymbols);
+                    
+                    isSpinning = false;
+                    spinBtn.disabled = false;
+                    
+                    if (balance <= 0) {
+                        resultElement.textContent = 'Игра окончена! Начните заново.';
+                        resultElement.className = 'result loss';
+                        spinBtn.disabled = true;
+                    }
+                }
+            }, 100);
+        }
+        
+        function checkWin(symbols) {
+            const [s1, s2, s3] = symbols;
+            let winAmount = 0;
+            let message = '';
+            
+            if (s1 === s2 && s2 === s3) {
+                winAmount = 50; 
+                message = `ДЖЕКПОТ! Вы выиграли ${winAmount} ₽!`;
+                resultElement.className = 'result win';
+            } else if (s1 === s2 || s2 === s3 || s1 === s3) {
+                winAmount = 20; 
+                message = `Поздравляем! Вы выиграли ${winAmount} ₽!`;
+                resultElement.className = 'result win';
+            } else {
+                message = 'Попробуйте еще раз!';
+                resultElement.className = 'result loss';
+            }
+            
+            if (winAmount > 0) {
+                balance += winAmount;
+                balanceElement.textContent = balance;
+            }
+            
+            resultElement.textContent = message;
+        }
+        
+        function resetGame() {
+            balance = 100;
+            balanceElement.textContent = balance;
+            resultElement.textContent = '';
+            resultElement.className = 'result';
+            spinBtn.disabled = false;
+            
+            slot1.textContent = '🍒';
+            slot2.textContent = '🍋';
+            slot3.textContent = '🍊';
+        }
+
+        resetGame();
+    </script>
+</body>
+</html>
